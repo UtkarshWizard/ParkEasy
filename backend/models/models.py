@@ -1,11 +1,12 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from flask_bcrypt import Bcrypt
+from flask_login import UserMixin
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 
-class User(db.Model):
+class User(db.Model, UserMixin):
     id = db.Column(db.Integer , primary_key = True)
     email = db.Column(db.String(100), unique = True, nullable = False)
     password = db.Column(db.String(100), nullable = False)
@@ -18,7 +19,7 @@ class User(db.Model):
     def check_password(self , password):
         return bcrypt.check_password_hash(self.password , password)
     
-class Admin(db.Model):
+class Admin(db.Model, UserMixin):
     id = db.Column(db.Integer , primary_key=True)
     email = db.Column(db.String(100), unique=True, nullable=False , default="admin@gmail.com")
     password = db.Column(db.String(255), nullable=False)

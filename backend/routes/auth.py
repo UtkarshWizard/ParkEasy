@@ -21,26 +21,23 @@ def signup():
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.json
-    user = User.query.filter_by(email=data['email']).first()
+    email = data.get('email')
+    password = data.get('password')
 
-    if user and user.check_password(data['password']):
-        login_user(user)
-        session['role'] = 'user'
-        return jsonify({"message": "Logged in as user"}), 200
-    else:
-        return jsonify({"error": "Invalid credentials"}), 401
-    
-@auth_bp.route('/admin/login', methods=['POST'])
-def admin_login():
-    data = request.json
-    admin = Admin.query.filter_by(email=data['email']).first()
-
-    if admin and admin.check_password(data['password']):
+    admin = Admin.query.filter_by(email=email).first()
+    if admin and admin.check_password(password):
         login_user(admin)
         session['role'] = 'admin'
-        return jsonify({"message": "Logged in as admin"}), 200
-    else:
-        return jsonify({"error": "Invalid admin credentials"}), 401
+        return jsonify({"message": "Logged in as admin", "redirect": "/admin/dashboard"}), 200
+
+    user = User.query.filter_by(email=email).first()
+    if user and user.check_password(password):
+        login_user(user)
+        session['role'] = 'user'
+        return jsonify({"message": "Logged in as user", "redirect": "/user/dashboard"}), 200
+
+    return jsonify({"error": "Invalid credentials"}), 401
+
 
 @auth_bp.route('/logout', methods=['POST'])
 @login_required
@@ -48,3 +45,18 @@ def logout():
     logout_user()
     session.pop('role', None)
     return jsonify({"message": "Logged out"}), 200
+
+@auth_bp.route('/check', methods=['GET'])
+def check():
+    if current_user.is_authenticated:
+        return jsonify({
+            "authenticated": True,
+            "email": current_user.email,
+            "fullname": current_user.fullname,
+            "role": session.get('role')
+        })
+    else:
+        return jsonify({
+            "authenticated": False
+        })
+

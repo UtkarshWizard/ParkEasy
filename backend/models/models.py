@@ -23,6 +23,7 @@ class Admin(db.Model, UserMixin):
     id = db.Column(db.Integer , primary_key=True)
     email = db.Column(db.String(100), unique=True, nullable=False , default="admin@gmail.com")
     password = db.Column(db.String(255), nullable=False)
+    fullname = db.Column(db.String(255) , nullable = False , default = "Admin")
 
     def set_password(self , password):
         self.password = bcrypt.generate_password_hash(password).decode('utf-8')

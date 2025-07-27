@@ -1,17 +1,8 @@
 from flask import Blueprint, jsonify ,request
-from flask_login import login_required, current_user
-from models.models import db , Admin , ParkingLot , ParkingSpot , User , Reservation
+from models.models import db , ParkingLot , ParkingSpot , User , Reservation
+from utils.decorators import admin_required
 
 admin_bp = Blueprint('admin', __name__)
-
-def admin_required(func):
-    @login_required
-    def wrapper(*args, **kwargs):
-        if not isinstance(current_user._get_current_object(), Admin):
-            return jsonify({"error": "Unauthorized - Admins only"}), 403
-        return func(*args, **kwargs)
-    wrapper.__name__ = func.__name__
-    return wrapper
 
 @admin_bp.route('/dashboard', methods=['GET'])
 @admin_required
@@ -117,7 +108,7 @@ def get_all_reservations():
     reservations = (
         Reservation.query
         .order_by(Reservation.parking_timestamp.desc())
-        .limit(50)  # limit to latest 50 for performance
+        .limit(50)
         .all()
     )
     data = []
@@ -127,16 +118,17 @@ def get_all_reservations():
             "user_id": r.user_id,
             "spot_id": r.spot_id,
             "lot_id": r.spot.lot_id if r.spot else None,
-            "spot_number": r.spot.number if r.spot else None,
-            "lot_name": r.spot.lot.name if r.spot and r.spot.lot else None,
-            "parking_timestamp": r.parking_timestamp.isoformat(),
+            "spot_number": r.spot.id if r.spot else None,
+            "lot_name": r.spot.lot.location_name if r.spot and r.spot.lot else None,
+            "booking_timestamp" : r.booking_timestamp.isoformat(),
+            "parking_timestamp": r.parking_timestamp.isoformat() if r.parking_timestamp else None,
             "leaving_timestamp": r.leaving_timestamp.isoformat() if r.leaving_timestamp else None,
             "parking_cost": r.parking_cost,
         })
     return jsonify(data)
 
 @admin_bp.route('/users', methods=['GET'])
-@admin_required 
+@admin_required
 def get_users():
     users = User.query.all()
     result = []

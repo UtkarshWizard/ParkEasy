@@ -15,12 +15,16 @@ export default {
       totalUsers: 0,
       totalRevenue: 0,
       activeBookings: 0,
-      todaysBookings: 0,
     };
   },
   computed: {
     occupancyRate() {
-      return ((this.occupiedSpots / this.totalSpots) * 100).toFixed(1);
+      return this.totalSpots === 0
+        ? "0.0"
+        : ((this.occupiedSpots / this.totalSpots) * 100).toFixed(1);
+    },
+    avgOccupancy() {
+      return this.occupancyRate + "%";
     },
   },
   async mounted() {
@@ -55,11 +59,6 @@ export default {
         const res = await axios.get("/admin/users");
         this.users = res.data;
         this.totalUsers = this.users.length;
-
-        this.activeBookings = this.users.reduce(
-          (sum, user) => sum + (user.active_reservations?.length || 0),
-          0
-        );
       } catch (err) {
         console.error("Error fetching users", err);
       }
@@ -68,16 +67,17 @@ export default {
     async fetchReservations() {
       try {
         const res = await axios.get("/admin/reservations");
-        this.reservations = res.data;
+        this.reservations = res.data.map((r) => ({
+          ...r,
+          status: r.leaving_timestamp ? "Completed" : "Active",
+        }));
 
         this.totalRevenue = this.reservations.reduce(
-          (sum, r) => sum + r.price,
+          (sum, r) => sum + r.parking_cost,
           0
         );
-
-        const today = new Date().toISOString().split("T")[0];
-        this.todaysBookings = this.reservations.filter((r) =>
-          r.start_time.startsWith(today)
+        this.activeBookings = this.reservations.filter(
+          (r) => r.status === "Active"
         ).length;
       } catch (err) {
         console.error("Error fetching reservations", err);
@@ -105,16 +105,21 @@ export default {
         },
         {
           title: "Total Revenue",
-          value: `$${this.totalRevenue.toFixed(2)}`,
+          value: `₹ ${this.totalRevenue.toFixed(2)}`,
           icon: "bi bi-currency-dollar",
           color: "orange",
         },
       ];
     },
-    timeAgo(isoTime) {
-      const now = new Date();
-      const past = new Date(isoTime);
-      const diffSec = Math.floor((now - past) / 1000);
+    timeAgo(utcTime) {
+      const utcDate = new Date(utcTime);
+
+      // Convert UTC to IST (UTC+5:30)
+      const istOffsetMs = 5.5 * 60 * 60 * 1000;
+      const istDate = new Date(utcDate.getTime() + istOffsetMs);
+
+      const now = new Date(); // local browser time (assumed IST for Indian users)
+      const diffSec = Math.floor((now - istDate) / 1000);
 
       if (diffSec < 60) return `${diffSec} sec ago`;
       if (diffSec < 3600) return `${Math.floor(diffSec / 60)} min ago`;
@@ -165,7 +170,7 @@ export default {
         </div>
       </div>
       <div class="col">
-        <StatCard title="Active Bookings" value="145">
+        <StatCard title="Active Bookings" :value="String(activeBookings)">
           <template #icon>
             <div
               class="p-2 rounded bg-warning"
@@ -177,19 +182,7 @@ export default {
         </StatCard>
       </div>
       <div class="col">
-        <StatCard title="Today's Bookings" value="23">
-          <template #icon>
-            <div
-              class="p-2 rounded bg-primary"
-              style="width: 40px; height: 40px"
-            >
-              <i class="bi bi-clock text-white fs-5"></i>
-            </div>
-          </template>
-        </StatCard>
-      </div>
-      <div class="col">
-        <StatCard title="Average Occupancy" value="55.6%">
+        <StatCard title="Average Occupancy" :value="avgOccupancy">
           <template #icon>
             <div class="p-2 rounded bg-teal" style="width: 40px; height: 40px">
               <i class="bi bi-graph-up-arrow text-white fs-5"></i>
@@ -202,17 +195,24 @@ export default {
     <div class="card shadow-sm p-3">
       <h5 class="fw-bold mb-3">Recent Activity</h5>
       <div
-        v-for="r in reservations.slice(0, 5)"
+        v-for="r in reservations.slice(0, 10)"
         :key="r.id"
         class="d-flex justify-content-between align-items-center border-top pt-3"
       >
         <div>
-          <span class="text-primary fw-semibold">New booking created</span>
+          <span
+            :class="{
+              'text-success fw-semibold': r.status === 'Active',
+              'text-muted fw-semibold': r.status === 'Completed',
+            }"
+          >
+            Booking {{ r.status === "Active" ? "started" : "completed" }}
+          </span>
           <div class="text-muted small">
             {{ r.lot_name || "Lot" }} - Spot {{ r.spot_number }}
           </div>
         </div>
-        <div class="text-muted small">{{ timeAgo(r.start_time) }}</div>
+        <div class="text-muted small">{{ timeAgo(r.booking_timestamp) }}</div>
       </div>
     </div>
   </div>

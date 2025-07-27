@@ -18,7 +18,7 @@ export default {
     window.addEventListener("resize", this.checkMobile);
 
     try {
-      const res = await axios.get("/auth/check", { withCredentials: true });
+      const res = await axios.get("/auth/check");
       if (res.data.authenticated) {
         this.user = {
           fullname: res.data.fullname,

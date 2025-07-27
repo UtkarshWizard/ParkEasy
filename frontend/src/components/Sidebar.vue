@@ -23,8 +23,8 @@ export default {
   methods: {
     async logout() {
       try {
-        await axios.post("/auth/logout", {}, { withCredentials: true });
-        window.location.href = "/";
+        await axios.post("/auth/logout");
+        window.location.href = "/signin";
       } catch (err) {
         console.error("Logout failed", err);
       }

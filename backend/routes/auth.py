@@ -46,17 +46,24 @@ def logout():
     session.pop('role', None)
     return jsonify({"message": "Logged out"}), 200
 
-@auth_bp.route('/check', methods=['GET'])
-def check():
-    if current_user.is_authenticated:
+@auth_bp.route('/check')
+@login_required
+def check_auth():
+    if isinstance(current_user, User):
         return jsonify({
             "authenticated": True,
-            "email": current_user.email,
+            "role": "user",
             "fullname": current_user.fullname,
-            "role": session.get('role')
+            "email": current_user.email
+        })
+    elif isinstance(current_user, Admin):
+        return jsonify({
+            "authenticated": True,
+            "role": "admin",
+            "fullname": current_user.fullname,
+            "email": current_user.email
         })
     else:
-        return jsonify({
-            "authenticated": False
-        })
+        return jsonify({ "authenticated": False }), 401
+
 

@@ -11,7 +11,7 @@ export default {
       stats: [],
       users: [],
       bookings: [],
-      userMap: {}, // for fast lookup
+      userMap: {},
     };
   },
   computed: {
@@ -26,7 +26,8 @@ export default {
           .toLowerCase()
           .includes(this.searchBooking.toLowerCase());
         const matchesStatus =
-          this.filterStatus === "All Status" || booking.status === this.filterStatus;
+          this.filterStatus === "All Status" ||
+          booking.status === this.filterStatus;
         return matchesSearch && matchesStatus;
       });
     },
@@ -36,29 +37,55 @@ export default {
       const res = await axios.get("/admin/users");
       this.users = res.data.map((u, idx) => {
         const userObj = {
-          id: idx + 1, // Assign fake ID for matching with bookings
+          id: idx + 1,
           name: u.fullname,
           email: u.email,
-          phone: "N/A",
           totalBookings: 0,
           activeBookings: u.active_reservations,
-          registered: "Unknown",
         };
         this.userMap[u.email] = userObj;
         return userObj;
       });
     },
+
+    parseUTC(datetimeStr) {
+      const isoLike = datetimeStr.replace(" ", "T").split(".")[0] + "Z";
+      return new Date(isoLike);
+    },
+
     async fetchBookings() {
       const res = await axios.get("/admin/reservations");
+
+      const formatterDate = new Intl.DateTimeFormat("en-IN", {
+        timeZone: "Asia/Kolkata",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+
+      const formatterTime = new Intl.DateTimeFormat("en-IN", {
+        timeZone: "Asia/Kolkata",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+
       this.bookings = res.data.map((b) => {
         const user = this.findUserByIdOrEmail(b.user_id);
         const location = `${b.lot_name || "Lot"} - ${b.spot_number || "?"}`;
-        const start = new Date(b.parking_timestamp);
-        const end = b.leaving_timestamp ? new Date(b.leaving_timestamp) : null;
-        const duration = this.calculateDuration(start, end);
-        const status = end ? "Completed" : "Active";
 
-        // Update user totalBookings
+        const startUTC = this.parseUTC(b.parking_timestamp);
+        const endUTC = b.leaving_timestamp
+          ? this.parseUTC(b.leaving_timestamp)
+          : null;
+
+        const date = formatterDate.format(startUTC);
+        const startTime = formatterTime.format(startUTC);
+        const endTime = endUTC ? formatterTime.format(endUTC) : "Ongoing";
+
+        const duration = this.calculateDuration(startUTC, endUTC);
+        const status = endUTC ? "Completed" : "Active";
+
         if (user) user.totalBookings++;
 
         return {
@@ -67,40 +94,76 @@ export default {
           email: user?.email || "",
           location,
           duration,
-          amount: `$${b.parking_cost.toFixed(2)}`,
-          date: start.toLocaleDateString(),
-          startTime: start.toLocaleTimeString(),
-          endTime: end ? end.toLocaleTimeString() : "Ongoing",
+          amount: `₹${b.parking_cost.toFixed(2)}`,
+          date,
+          startTime,
+          endTime,
           status,
         };
       });
 
       this.updateStats();
     },
+
     calculateDuration(start, end) {
       const diff = (end || new Date()) - start;
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      return `${hours} hour${hours !== 1 ? "s" : ""}`;
+
+      if (diff <= 0) return "0m";
+
+      const totalMinutes = Math.floor(diff / (1000 * 60));
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+
+      if (hours > 0) {
+        return `${hours}h ${minutes}m`;
+      } else {
+        return `${minutes}m`;
+      }
     },
     findUserByIdOrEmail(userId) {
-      return this.users.find((u) => u.id === userId) || null;
+      return (
+        this.users.find((u) => u.id === userId || u.email === userId) || null
+      );
     },
+
     updateStats() {
       const totalUsers = this.users.length;
       const activeUsers = this.users.filter((u) => u.activeBookings > 0).length;
       const totalBookings = this.bookings.length;
-      const activeBookings = this.bookings.filter((b) => b.status === "Active").length;
+      const activeBookings = this.bookings.filter(
+        (b) => b.status === "Active"
+      ).length;
       const totalRevenue = this.bookings.reduce(
-        (sum, b) => sum + parseFloat(b.amount.replace("$", "")),
+        (sum, b) => sum + parseFloat(b.amount.replace(/[^\d.]/g, "")),
         0
       );
 
       this.stats = [
         { label: "Total Users", value: totalUsers, icon: "👤" },
-        { label: "Active Users", value: activeUsers, icon: "✅", color: "text-success" },
-        { label: "Total Bookings", value: totalBookings, icon: "📅", color: "text-primary" },
-        { label: "Active Bookings", value: activeBookings, icon: "⏰", color: "text-warning" },
-        { label: "Total Revenue", value: `$${totalRevenue.toFixed(2)}`, icon: "💲", color: "text-success" },
+        {
+          label: "Active Users",
+          value: activeUsers,
+          icon: "✅",
+          color: "text-success",
+        },
+        {
+          label: "Total Bookings",
+          value: totalBookings,
+          icon: "📅",
+          color: "text-primary",
+        },
+        {
+          label: "Active Bookings",
+          value: activeBookings,
+          icon: "⏰",
+          color: "text-warning",
+        },
+        {
+          label: "Total Revenue",
+          value: `₹ ${totalRevenue.toFixed(2)}`,
+          icon: "💲",
+          color: "text-success",
+        },
       ];
     },
   },
@@ -179,10 +242,12 @@ export default {
             </div>
             <div class="small">
               <div>
-                <i class="bi bi-calendar me-1"></i>{{ user.totalBookings }} total bookings
+                <i class="bi bi-calendar me-1"></i
+                >{{ user.totalBookings }} total bookings
               </div>
               <div>
-                <i class="bi bi-check-circle me-1 text-success"></i>{{ user.activeBookings }} active
+                <i class="bi bi-check-circle me-1 text-success"></i
+                >{{ user.activeBookings }} active
               </div>
             </div>
           </div>
@@ -220,7 +285,11 @@ export default {
             <div>
               <div class="fw-bold">
                 {{ booking.user }}
-                <span class="badge bg-success ms-2" v-if="booking.status === 'Active'">✔ Active</span>
+                <span
+                  class="badge bg-success ms-2"
+                  v-if="booking.status === 'Active'"
+                  >✔ Active</span
+                >
               </div>
               <div class="small text-muted">
                 <i class="bi bi-envelope me-1"></i>{{ booking.email }}<br />
@@ -231,7 +300,9 @@ export default {
             </div>
             <div class="text-end">
               <div class="fw-bold">{{ booking.date }}</div>
-              <div class="small">{{ booking.startTime }} - {{ booking.endTime }}</div>
+              <div class="small">
+                {{ booking.startTime }} - {{ booking.endTime }}
+              </div>
             </div>
           </div>
         </div>

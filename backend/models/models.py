@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime , timezone
 from flask_bcrypt import Bcrypt
 from flask_login import UserMixin
 
@@ -50,6 +50,7 @@ class Reservation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     spot_id = db.Column(db.Integer, db.ForeignKey('parking_spot.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    parking_timestamp = db.Column(db.DateTime, default=datetime.now)
-    leaving_timestamp = db.Column(db.DateTime, nullable=True)
+    booking_timestamp = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    parking_timestamp = db.Column(db.DateTime(timezone=True), nullable=True)
+    leaving_timestamp = db.Column(db.DateTime(timezone=True), nullable=True)
     parking_cost = db.Column(db.Float, default=0.0)

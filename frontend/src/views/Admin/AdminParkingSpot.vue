@@ -69,6 +69,8 @@ export default {
         const spots = spotsRes.data.map((s, idx) => ({
           number: (idx + 1).toString().padStart(2, "0"),
           status: s.status,
+          user: s.user ? s.user.fullname + " (" + s.user.email + ")" : null,
+          startTime: s.start_time || null
         }));
 
         lotList.push({

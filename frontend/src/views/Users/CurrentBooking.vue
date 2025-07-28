@@ -173,6 +173,7 @@ export default {
               <li>Remember to mark your slot as occupied when you arrive</li>
               <li>Keep your booking ID handy for any assistance</li>
               <li>Release the slot when leaving to avoid extra charges</li>
+              <li>Minimum booking time is 1 hour.</li>
             </ul>
           </div>
         </div>

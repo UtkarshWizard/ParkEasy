@@ -95,10 +95,28 @@ def get_spots_of_lot(lot_id):
     lot = ParkingLot.query.get_or_404(lot_id)
     spots = ParkingSpot.query.filter_by(lot_id=lot.id).all()
 
-    result = [{
-        'id': spot.id,
-        'status': 'Available' if spot.status == 'A' else 'Occupied'
-    } for spot in spots]
+    result = []
+    for spot in spots:
+        current_reservation = Reservation.query.filter_by(
+            spot_id=spot.id,
+            leaving_timestamp=None
+        ).first()
+
+        user_info = None
+        start_time = None
+        if current_reservation:
+            user_info = {
+                "fullname": current_reservation.user.fullname,
+                "email": current_reservation.user.email
+            }
+            start_time = current_reservation.parking_timestamp.isoformat() if current_reservation.parking_timestamp else None
+
+        result.append({
+            'id': spot.id,
+            'status': 'Available' if spot.status == 'A' else 'Occupied',
+            'user': user_info,
+            'start_time': start_time
+        })
 
     return jsonify(result), 200
 

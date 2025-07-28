@@ -24,7 +24,28 @@ export default {
       }
     },
     iconClass() {
-          return "bi bi-car-front";
+      return "bi bi-car-front";
+    },
+
+    formattedStartTime() {
+      if (!this.spot.startTime) return null;
+
+      // Parse the UTC ISO string
+      const utcDate = new Date(this.spot.startTime);
+
+      // Convert to IST (UTC + 5:30)
+      const istOffsetMs = 5.5 * 60 * 60 * 1000;
+      const istDate = new Date(utcDate.getTime() + istOffsetMs);
+
+      // Format IST date as "28 Jul 2025, 05:31 PM"
+      return istDate.toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
     },
   },
 };
@@ -42,12 +63,17 @@ export default {
 
     <div v-if="showTooltip" class="tooltip-box shadow-lg text-white">
       <div class="fw-bold mb-1">{{ spot.number || "" }}</div>
-      <div v-if="spot.user" class="small mt-1">
-        <i class="bi bi-person me-1"></i>{{ spot.user || "" }}
+      <div
+        v-if="spot.status.toLowerCase() === 'occupied' && spot.user"
+        class="small mt-1"
+      >
+        <i class="bi bi-person me-1"></i>{{ spot.user }}
       </div>
-      <div v-if="spot.startTime && spot.endTime" class="small">
-        <i class="bi bi-calendar me-1"></i>{{ spot.startTime }} -
-        {{ spot.endTime }}
+      <div
+        v-if="spot.status.toLowerCase() === 'occupied' && formattedStartTime"
+        class="small"
+      >
+        <i class="bi bi-calendar me-1"></i>{{ formattedStartTime }}
       </div>
     </div>
   </div>

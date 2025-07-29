@@ -8,3 +8,6 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'Utkarsh123'
     SESSION_COOKIE_SAMESITE = 'Lax'
     SESSION_COOKIE_SECURE= False
+    CACHE_TYPE = "RedisCache"
+    CACHE_REDIS_URL = "redis://localhost:6379/0"
+    CACHE_DEFAULT_TIMEOUT = 120 

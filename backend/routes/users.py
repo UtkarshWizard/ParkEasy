@@ -1,29 +1,31 @@
-from flask import Blueprint , jsonify;
-from flask_login import login_required , current_user;
-from datetime import datetime , timezone;
-from models.models import db, ParkingLot, ParkingSpot, Reservation;
-from utils.decorators import user_required;
+from flask import Blueprint, jsonify
+from flask_login import login_required, current_user
+from datetime import datetime, timezone
+from models.models import db, ParkingLot, ParkingSpot, Reservation
+from utils.decorators import user_required
+from utils.extension import cache
 
-user_bp = Blueprint('user' , __name__);
+user_bp = Blueprint('user', __name__)
 
-@user_bp.route('/lots' , methods=['GET'])
+@user_bp.route('/lots', methods=['GET'])
 @user_required
+@cache.cached(timeout=60, key_prefix="user_available_lots")
 def get_available_spots():
     lots = ParkingLot.query.all()
     result = []
     for lot in lots:
-        available_spots = ParkingSpot.query.filter_by(lot_id = lot.id , status='A').count()
+        available_spots = ParkingSpot.query.filter_by(lot_id=lot.id, status='A').count()
         result.append({
-            "id" : lot.id,
-            "location_name" : lot.location_name,
-            "address" : lot.address,
-            "pincode" : lot.pincode,
-            "price_per_hour" : lot.price_per_hour,
-            "available_spots" : available_spots,
-            "total_spots" : lot.no_of_spots
+            "id": lot.id,
+            "location_name": lot.location_name,
+            "address": lot.address,
+            "pincode": lot.pincode,
+            "price_per_hour": lot.price_per_hour,
+            "available_spots": available_spots,
+            "total_spots": lot.no_of_spots
         })
     return jsonify(result), 200
-    
+
 @user_bp.route('/reserve/<int:lot_id>', methods=['POST'])
 @user_required
 def reserve_spot(lot_id):
@@ -38,6 +40,9 @@ def reserve_spot(lot_id):
     )
     db.session.add(reservation)
     db.session.commit()
+
+    cache.delete("user_available_lots")
+
     return jsonify({"message": "Spot reserved", "spot_id": spot.id, "reservation_id": reservation.id}), 200
 
 @user_bp.route('/occupy/<int:reservation_id>', methods=['POST'])
@@ -74,13 +79,15 @@ def release_spot(reservation_id):
     reservation.parking_cost = round(duration_hours * lot.price_per_hour, 2)
 
     spot.status = 'A'
-
     db.session.commit()
-    return jsonify({"message": "Spot released", "cost": reservation.parking_cost}), 200
 
+    cache.delete("user_available_lots")
+
+    return jsonify({"message": "Spot released", "cost": reservation.parking_cost}), 200
 
 @user_bp.route('/reservation/current', methods=['GET'])
 @user_required
+@cache.cached(timeout=60, key_prefix=lambda: f"user_current_reservation_{current_user.id}")
 def current_reservation():
     reservation = Reservation.query.filter_by(user_id=current_user.id, leaving_timestamp=None).order_by(Reservation.id.desc()).first()
     if not reservation:
@@ -100,6 +107,7 @@ def current_reservation():
 
 @user_bp.route('/history', methods=['GET'])
 @user_required
+@cache.cached(timeout=60, key_prefix=lambda: f"user_history_{current_user.id}")
 def parking_history():
     reservations = Reservation.query.filter_by(user_id=current_user.id).all()
     result = []
@@ -116,6 +124,7 @@ def parking_history():
 
 @user_bp.route('/analytics/frequent-lots', methods=['GET'])
 @user_required
+@cache.cached(timeout=60, key_prefix=lambda: f"user_frequent_lots_{current_user.id}")
 def frequent_lots():
     from collections import Counter
     reservations = Reservation.query.filter_by(user_id=current_user.id).all()
@@ -125,6 +134,7 @@ def frequent_lots():
 
 @user_bp.route('/analytics/recent-durations', methods=['GET'])
 @user_required
+@cache.cached(timeout=60, key_prefix=lambda: f"user_recent_durations_{current_user.id}")
 def recent_durations():
     reservations = (
         Reservation.query

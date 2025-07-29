@@ -6,7 +6,10 @@ from routes.auth import auth_bp
 from routes.admin import admin_bp
 from routes.users import user_bp
 from flask_cors import CORS
-from functools import wraps
+from utils.extension import cache
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -15,6 +18,8 @@ CORS(app, supports_credentials=True , origins=["http://localhost:5173"])
 
 db.init_app(app)
 bcrypt.init_app(app)
+
+cache.init_app(app)
 
 login_manager = LoginManager()
 login_manager.init_app(app)

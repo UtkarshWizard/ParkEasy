@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify ,request
 from models.models import db , ParkingLot , ParkingSpot , User , Reservation
 from utils.decorators import admin_required
+from utils.extension import cache
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -42,6 +43,7 @@ def create_parking_lot():
 
 @admin_bp.route('/lots', methods=['GET'])
 @admin_required
+@cache.cached(timeout=60, key_prefix="admin_all_lots")
 def get_parking_lots():
     lots = ParkingLot.query.all()
     result = []
@@ -73,6 +75,8 @@ def update_parking_lot(lot_id):
     lot.no_of_spots = data.get('no_of_spots' , lot.no_of_spots)
 
     db.session.commit()
+
+    cache.delete("admin_all_lots")
     return jsonify({'message': 'Parking lot updated'}), 200
 
 @admin_bp.route('/lots/<int:lot_id>', methods=['DELETE'])
@@ -87,10 +91,14 @@ def delete_parking_lot(lot_id):
 
     db.session.delete(lot)
     db.session.commit()
+
+    cache.delete("admin_all_lots")
+    cache.delete(f"lot_spots_{lot_id}")
     return jsonify({'message': 'Parking lot deleted'}), 200
 
 @admin_bp.route('/lots/<int:lot_id>/spots', methods=['GET'])
 @admin_required
+@cache.cached(timeout=60, key_prefix=lambda: f"lot_spots_{request.view_args['lot_id']}")
 def get_spots_of_lot(lot_id):
     lot = ParkingLot.query.get_or_404(lot_id)
     spots = ParkingSpot.query.filter_by(lot_id=lot.id).all()
@@ -162,6 +170,7 @@ def get_users():
 
 @admin_bp.route('/analytics/revenue', methods=['GET'])
 @admin_required
+@cache.cached(timeout=300, key_prefix="analytics_revenue")
 def revenue_per_lot():
     lots = ParkingLot.query.all()
     data = []
@@ -172,6 +181,7 @@ def revenue_per_lot():
 
 @admin_bp.route('/analytics/occupancy', methods=['GET'])
 @admin_required
+@cache.cached(timeout=60, key_prefix="analytics_occupancy")
 def occupancy_per_lot():
     lots = ParkingLot.query.all()
     data = []
@@ -187,6 +197,7 @@ def occupancy_per_lot():
 
 @admin_bp.route('/analytics/average-duration', methods=['GET'])
 @admin_required
+@cache.cached(timeout=300, key_prefix="analytics_avg_duration")
 def avg_duration_per_lot():
     lots = ParkingLot.query.all()
     data = []

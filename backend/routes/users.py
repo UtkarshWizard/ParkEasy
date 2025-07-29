@@ -113,3 +113,32 @@ def parking_history():
             "cost": r.parking_cost
         })
     return jsonify(result), 200
+
+@user_bp.route('/analytics/frequent-lots', methods=['GET'])
+@user_required
+def frequent_lots():
+    from collections import Counter
+    reservations = Reservation.query.filter_by(user_id=current_user.id).all()
+    lot_count = Counter(r.spot.lot.location_name for r in reservations if r.spot and r.spot.lot)
+    data = [{'lot': lot, 'count': count} for lot, count in lot_count.items()]
+    return jsonify(data)
+
+@user_bp.route('/analytics/recent-durations', methods=['GET'])
+@user_required
+def recent_durations():
+    reservations = (
+        Reservation.query
+        .filter_by(user_id=current_user.id)
+        .filter(Reservation.leaving_timestamp.isnot(None))
+        .order_by(Reservation.parking_timestamp.desc())
+        .limit(10)
+        .all()
+    )
+    data = []
+    for r in reservations:
+        duration = (r.leaving_timestamp - r.parking_timestamp).total_seconds() / 3600 if r.parking_timestamp and r.leaving_timestamp else 0
+        data.append({
+            'date': r.parking_timestamp.strftime('%Y-%m-%d') if r.parking_timestamp else '',
+            'duration': round(duration, 2)
+        })
+    return jsonify(data)

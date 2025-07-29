@@ -61,6 +61,7 @@ export default {
         <SidebarLink icon="bi bi-building" label="Parking Lots" link="/admin/parkinglot" />
         <SidebarLink icon="bi bi-geo-alt" label="Parking Spots" link="/admin/parkingspot" />
         <SidebarLink icon="bi bi-people" label="Users & Bookings" link="/admin/users" />
+        <SidebarLink icon="bi bi-people" label="Analytics" link="/admin/analytics" />
       </ul>
     </div>
 

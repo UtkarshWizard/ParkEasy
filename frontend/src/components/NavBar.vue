@@ -69,6 +69,11 @@ export default {
               <i class="bi bi-clock-history me-1"></i> History
             </router-link>
           </li>
+          <li class="nav-item">
+            <router-link to="/user/analytics" class="nav-link" active-class="active">
+              <i class="bi bi-clock-history me-1"></i> Analytics
+            </router-link>
+          </li>
 
           <!-- User Avatar -->
           <li class="nav-item">

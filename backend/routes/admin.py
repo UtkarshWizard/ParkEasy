@@ -159,3 +159,44 @@ def get_users():
             'active_reservations': len(active_res),
         })
     return jsonify(result), 200
+
+@admin_bp.route('/analytics/revenue', methods=['GET'])
+@admin_required
+def revenue_per_lot():
+    lots = ParkingLot.query.all()
+    data = []
+    for lot in lots:
+        total = sum(r.parking_cost for spot in lot.spots for r in spot.reservations if r.parking_cost)
+        data.append({'lot': lot.location_name, 'revenue': total})
+    return jsonify(data)
+
+@admin_bp.route('/analytics/occupancy', methods=['GET'])
+@admin_required
+def occupancy_per_lot():
+    lots = ParkingLot.query.all()
+    data = []
+    for lot in lots:
+        available = sum(1 for spot in lot.spots if spot.status == 'A')
+        occupied = sum(1 for spot in lot.spots if spot.status == 'O')
+        data.append({
+            'lot': lot.location_name,
+            'available': available,
+            'occupied': occupied
+        })
+    return jsonify(data)
+
+@admin_bp.route('/analytics/average-duration', methods=['GET'])
+@admin_required
+def avg_duration_per_lot():
+    lots = ParkingLot.query.all()
+    data = []
+    for lot in lots:
+        durations = []
+        for spot in lot.spots:
+            for r in spot.reservations:
+                if r.parking_timestamp and r.leaving_timestamp:
+                    duration = (r.leaving_timestamp - r.parking_timestamp).total_seconds() / 3600
+                    durations.append(duration)
+        avg = round(sum(durations) / len(durations), 2) if durations else 0
+        data.append({'lot': lot.location_name, 'avg_duration': avg})
+    return jsonify(data)

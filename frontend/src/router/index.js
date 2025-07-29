@@ -11,6 +11,8 @@ import UserLayout from "@/layouts/UserLayout.vue";
 import CurrentBooking from "@/views/Users/CurrentBooking.vue";
 import BookingHistory from "@/views/Users/BookingHistory.vue";
 import axios from "axios";
+import AdminAnalytics from "@/views/Admin/AdminAnalytics.vue";
+import UserAnalytics from "@/views/Users/UserAnalytics.vue";
 
 const routes = [
   { path: "/signin", name: "Signin", component: Signin },
@@ -39,6 +41,11 @@ const routes = [
         name: "AdminUsersBookings",
         component: AdminUsersBookings,
       },
+      {
+        path: "analytics",
+        name: "AdminAnalytics",
+        component: AdminAnalytics,
+      },
     ],
   },
   {
@@ -59,7 +66,12 @@ const routes = [
         path: "bookinghistory",
         name: "BookingHistory",
         component: BookingHistory
-      }
+      },
+      {
+        path: "analytics",
+        name: "UserAnalytics",
+        component: UserAnalytics
+      },
     ],
   },
 ];

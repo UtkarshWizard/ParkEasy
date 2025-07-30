@@ -87,7 +87,6 @@ def release_spot(reservation_id):
 
 @user_bp.route('/reservation/current', methods=['GET'])
 @user_required
-@cache.cached(timeout=60, key_prefix=lambda: f"user_current_reservation_{current_user.id}")
 def current_reservation():
     reservation = Reservation.query.filter_by(user_id=current_user.id, leaving_timestamp=None).order_by(Reservation.id.desc()).first()
     if not reservation:

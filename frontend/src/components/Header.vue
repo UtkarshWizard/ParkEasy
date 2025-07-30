@@ -16,7 +16,7 @@ export default {
         <div class="bg-gradient p-2 rounded me-2">
           <i class="fas fa-car text-white"></i>
         </div>
-        <span class="fw-bold gradient-text fs-4">ParkSmart</span>
+        <span class="fw-bold gradient-text fs-4">ParkEase</span>
       </a>
 
       <button

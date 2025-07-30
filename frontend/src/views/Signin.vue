@@ -39,12 +39,12 @@ export default {
       if (!this.validateForm()) return
 
       try {
-        await axios.post('/auth/signin', {
+        await axios.post('/auth/login', {
           email: this.email,
           password: this.password
         })
 
-        const isAdmin = this.email.includes('@admin') // Or change based on response
+        const isAdmin = this.email.includes('@admin')
         this.$router.push(isAdmin ? '/admin/dashboard' : '/user/dashboard')
       } catch (err) {
         this.errors.general = err.response?.data?.error || 'Login failed. Please try again.'

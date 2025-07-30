@@ -1,18 +1,36 @@
 from flask import Blueprint , request , jsonify , session
 from models.models import db , User , Admin
 from flask_login import login_user , logout_user , login_required , current_user
+import re
 
 auth_bp = Blueprint('auth' , __name__)
 
-@auth_bp.route('/signup' , methods=['POST'])
+@auth_bp.route('/signup', methods=['POST'])
 def signup():
-    data = request.json
-    existing_user = User.query.filter_by(email=data['email']).first()
+    data = request.json or {}
+
+    email = data.get('email', '').strip()
+    fullname = data.get('fullname', '').strip()
+    password = data.get('password', '').strip()
+
+    if not email or not fullname or not password:
+        return jsonify({"error": "All fields are required"}), 400
+
+    if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+        return jsonify({"error": "Invalid email format"}), 400
+
+    if len(password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters"}), 400
+
+    if len(fullname) < 3:
+        return jsonify({"error": "Fullname must be at least 3 characters"}), 400
+
+    existing_user = User.query.filter_by(email=email).first()
     if existing_user:
         return jsonify({"error": "User already exists"}), 400
-    
-    new_user = User(email=data['email'], fullname=data['fullname'])
-    new_user.set_password(data['password'])
+
+    new_user = User(email=email, fullname=fullname)
+    new_user.set_password(password)
 
     db.session.add(new_user)
     db.session.commit()

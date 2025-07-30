@@ -10,6 +10,7 @@ export default {
       confirmPassword: '',
       showPassword: false,
       showConfirmPassword: false,
+      errors: {}
     }
   },
   computed: {
@@ -24,20 +25,43 @@ export default {
     toggleConfirmPassword() {
       this.showConfirmPassword = !this.showConfirmPassword
     },
-    async signup() {
+    validateForm() {
+      const errors = {}
+
+      if (!this.fullname || this.fullname.length < 3) {
+        errors.fullname = 'Full name must be at least 3 characters'
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!this.email || !emailRegex.test(this.email)) {
+        errors.email = 'Invalid email format'
+      }
+
+      if (!this.password || this.password.length < 6) {
+        errors.password = 'Password must be at least 6 characters'
+      }
+
       if (this.password !== this.confirmPassword) {
-        alert('Passwords do not match!')
+        errors.confirmPassword = 'Passwords do not match'
+      }
+
+      this.errors = errors
+      return Object.keys(errors).length === 0
+    },
+    async signup() {
+      if (!this.validateForm()) {
         return
       }
+
       try {
-        const res = await axios.post('/auth/signup' , {
+        await axios.post('/auth/signup', {
           email: this.email,
           fullname: this.fullname,
           password: this.password
         })
         this.$router.push('/signin')
       } catch (err) {
-        alert(err.response.data.error || 'Signup failed')
+        this.errors.general = err.response?.data?.error || 'Signup failed'
       }
     }
   }
@@ -47,6 +71,12 @@ export default {
 <template>
   <div class=" d-flex justify-content-center align-items-center min-vh-100 bg-light">
     <div class="w-100" style="max-width: 400px">
+      <small v-if="errors.fullname" class="text-danger">{{ errors.fullname }}</small>
+      <small v-if="errors.email" class="text-danger">{{ errors.email }}</small>
+      <small v-if="errors.password" class="text-danger">{{ errors.password }}</small>
+      <small v-if="errors.confirmPassword" class="text-danger">{{ errors.confirmPassword }}</small>
+      <small v-if="errors.general" class="text-danger d-block mt-2 text-center">{{ errors.general }}</small>
+
       <div class="text-center mb-4">
         <h2 class="fw-bold">Create Account</h2>
         <p class="text-muted">Join us and start your journey today</p>

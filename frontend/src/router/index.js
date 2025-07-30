@@ -13,8 +13,10 @@ import BookingHistory from "@/views/Users/BookingHistory.vue";
 import axios from "axios";
 import AdminAnalytics from "@/views/Admin/AdminAnalytics.vue";
 import UserAnalytics from "@/views/Users/UserAnalytics.vue";
+import Landing from "@/views/Landing.vue";
 
 const routes = [
+  { path: "/" , name: "Landingpage" , component: Landing},
   { path: "/signin", name: "Signin", component: Signin },
   { path: "/signup", name: "Signup", component: Signup },
   {
@@ -89,33 +91,29 @@ router.beforeEach(async (to, from, next) => {
 
     const role = res.data.role;
 
-    // ✅ If going to admin route
     if (to.path.startsWith("/admin")) {
       if (role === "admin") {
-        return next(); // allowed
+        return next();
       } else {
-        return next("/user/dashboard"); // ❌ block users
+        return next("/user/dashboard");
       }
     }
 
-    // ✅ If going to user route
     if (to.path.startsWith("/user")) {
       if (role === "user") {
-        return next(); // allowed
+        return next();
       } else {
-        return next("/admin/dashboard"); // ❌ block admins
+        return next("/admin/dashboard");
       }
     }
 
-    // ✅ If going to open route (signin/signup)
     return next();
   } catch (err) {
-    // ❌ Not logged in — redirect to signin if trying to access /admin or /user
     if (to.path.startsWith("/admin") || to.path.startsWith("/user")) {
       return next("/signin");
     }
 
-    return next(); // allow open routes
+    return next();
   }
 });
 

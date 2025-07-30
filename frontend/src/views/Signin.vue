@@ -8,6 +8,7 @@ export default {
       password: '',
       confirmPassword: '',
       showPassword: false,
+      errors: {}
     }
   },
   computed: {
@@ -19,18 +20,34 @@ export default {
     togglePassword() {
       this.showPassword = !this.showPassword
     },
+    validateForm() {
+      const errors = {}
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+      if (!this.email || !emailRegex.test(this.email)) {
+        errors.email = 'Please enter a valid email'
+      }
+
+      if (!this.password) {
+        errors.password = 'Password is required'
+      }
+
+      this.errors = errors
+      return Object.keys(errors).length === 0
+    },
     async signin() {
-      console.log("Sending login request...");
+      if (!this.validateForm()) return
+
       try {
-        const res = await axios.post('/auth/login' , {
+        await axios.post('/auth/signin', {
           email: this.email,
           password: this.password
         })
-        console.log("Login response:", res.data);
-        const redirect = res.data.redirect
-        this.$router.push(redirect)
+
+        const isAdmin = this.email.includes('@admin') // Or change based on response
+        this.$router.push(isAdmin ? '/admin/dashboard' : '/user/dashboard')
       } catch (err) {
-        alert(err.response.data.error || 'Login failed')
+        this.errors.general = err.response?.data?.error || 'Login failed. Please try again.'
       }
     }
   }
@@ -40,6 +57,10 @@ export default {
 <template>
   <div class=" d-flex justify-content-center align-items-center min-vh-100 bg-light">
     <div class="w-100" style="max-width: 400px">
+      <small v-if="errors.email" class="text-danger">{{ errors.email }}</small>
+      <small v-if="errors.password" class="text-danger">{{ errors.password }}</small>
+      <small v-if="errors.general" class="text-danger d-block text-center mt-2">{{ errors.general }}</small>
+
       <div class="text-center mb-4">
         <h2 class="fw-bold">Welcome Back !</h2>
         <p class="text-muted">Login to your account</p>

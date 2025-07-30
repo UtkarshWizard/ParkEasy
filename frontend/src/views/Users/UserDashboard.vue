@@ -96,7 +96,7 @@ export default {
           <input
             v-model="searchQuery"
             class="form-control"
-            placeholder="Search by name or location..."
+            placeholder="Search by location name or address..."
           />
         </div>
         <div class="col-md-4">

@@ -13,6 +13,7 @@ export default {
       showModal: false,
       currentEditLot: null,
       parkingLots: [],
+      searchQuery: "",
     };
   },
   computed: {
@@ -29,6 +30,11 @@ export default {
         0
       );
       return (totalRate / this.parkingLots.length).toFixed(2);
+    },
+    filteredLots() {
+      return this.parkingLots.filter((lot) =>
+        lot.name.toLowerCase().includes(this.searchQuery.toLowerCase())
+      );
     },
   },
   methods: {
@@ -141,9 +147,18 @@ export default {
       </div>
     </div>
 
+    <div class="mb-4">
+      <input
+        v-model="searchQuery"
+        type="text"
+        class="form-control"
+        placeholder="Search parking lot by name..."
+      />
+    </div>
+
     <div class="row g-4">
       <ParkingLotCard
-        v-for="lot in parkingLots"
+        v-for="lot in filteredLots"
         :key="lot.id"
         :lot="lot"
         @edit="openEditModal"

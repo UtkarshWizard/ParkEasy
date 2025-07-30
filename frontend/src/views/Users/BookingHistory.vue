@@ -55,6 +55,16 @@ export default {
       console.error("Error fetching booking history:", err);
     }
   },
+  methods: {
+    async triggerCSVExport() {
+      try {
+        const res = await axios.post("/user/export-csv");
+        alert(res.data.message);
+      } catch (e) {
+        alert("Something went wrong.");
+      }
+    }
+  }
 };
 </script>
 
@@ -62,11 +72,16 @@ export default {
   <div class="bg-light">
     <div class="container py-4 booking-history">
       <!-- Header -->
-      <div class="mb-4">
-        <h2 class="fw-bold">Booking History</h2>
-        <p class="text-muted">View all your past parking reservations</p>
-      </div>
-
+       <div class="d-flex justify-content-between align-items-center">
+        <div class="mb-4">
+          <h2 class="fw-bold">Booking History</h2>
+          <p class="text-muted">View all your past parking reservations</p>
+        </div>
+        <button class="btn btn-primary m-4" @click="triggerCSVExport">
+          Export Parking History
+        </button>
+       </div>
+      
       <!-- Stats -->
       <div class="row g-3 mb-4">
         <div class="col-md-4">

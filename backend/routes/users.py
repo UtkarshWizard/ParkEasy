@@ -152,3 +152,10 @@ def recent_durations():
             'duration': round(duration, 2)
         })
     return jsonify(data)
+
+@user_bp.route('/export-csv', methods=['POST'])
+@login_required
+def export_csv():
+    from celery_tasks.csv_export import generate_csv_report
+    generate_csv_report.delay(current_user.id)
+    return jsonify({"message": "CSV export task started. You will be notified by email when ready."})

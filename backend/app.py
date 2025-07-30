@@ -2,14 +2,11 @@ from flask import Flask , jsonify , session
 from config import Config
 from models.models import db , bcrypt , User, Admin
 from flask_login import LoginManager , current_user
-from routes.auth import auth_bp
-from routes.admin import admin_bp
-from routes.users import user_bp
 from flask_cors import CORS
 from utils.extension import cache
+from celery_app import make_celery
 import logging
 logging.basicConfig(level=logging.DEBUG)
-
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -19,7 +16,13 @@ CORS(app, supports_credentials=True , origins=["http://localhost:5173"])
 db.init_app(app)
 bcrypt.init_app(app)
 
+celery = make_celery(app)
+
 cache.init_app(app)
+
+from routes.auth import auth_bp
+from routes.admin import admin_bp
+from routes.users import user_bp
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -39,6 +42,8 @@ def load_user(user_id):
 app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(admin_bp, url_prefix='/admin')
 app.register_blueprint(user_bp, url_prefix='/user')
+
+from app import celery
 
 if __name__ == "__main__":
     app.run(debug=True, host="localhost")

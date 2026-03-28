@@ -1,13 +1,18 @@
 import os
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+ENV = os.environ.get("ENV", "development")
 
 class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.environ.get('SECRET_KEY')
-    SESSION_COOKIE_SAMESITE = 'Lax'
-    SESSION_COOKIE_SECURE= False
+    if ENV == "production":
+        SESSION_COOKIE_SAMESITE = "None"
+        SESSION_COOKIE_SECURE = True
+    else:
+        SESSION_COOKIE_SAMESITE = "Lax"
+        SESSION_COOKIE_SECURE = False
     CACHE_TYPE = "RedisCache"
     CACHE_REDIS_URL = os.environ.get("REDIS_URL")
     CACHE_DEFAULT_TIMEOUT = 120 

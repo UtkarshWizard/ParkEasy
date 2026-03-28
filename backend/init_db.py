@@ -1,3 +1,8 @@
+from dotenv import load_dotenv
+load_dotenv()
+
+import os
+print(os.environ.get("DATABASE_URL"))
 from app import app , db
 from models.models import Admin
 

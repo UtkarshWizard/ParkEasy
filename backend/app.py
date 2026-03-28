@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+
+load_dotenv() 
 from flask import Flask , jsonify , session
 from config import Config
 from models.models import db , bcrypt , User, Admin
@@ -5,13 +8,18 @@ from flask_login import LoginManager , current_user
 from flask_cors import CORS
 from utils.extension import cache
 from celery_app import make_celery
+
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
 app.config.from_object(Config)
 
-CORS(app, supports_credentials=True , origins=["http://localhost:5173"])
+CORS(app, supports_credentials=True, origins=[
+    "http://localhost:5173", "http://localhost:5174", "http://localhost:5175",
+    "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://127.0.0.1:5175",
+    "http://0.0.0.0:5173", "http://0.0.0.0:5174"
+])
 
 db.init_app(app)
 bcrypt.init_app(app)
@@ -34,6 +42,7 @@ def unauthorized():
 @login_manager.user_loader
 def load_user(user_id):
     role = session.get("role")
+    app.logger.debug(f"Loading user: id={user_id}, role={role}")
     if role == 'admin':
         return Admin.query.get(int(user_id))
     else:
@@ -43,7 +52,7 @@ app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(admin_bp, url_prefix='/admin')
 app.register_blueprint(user_bp, url_prefix='/user')
 
-from app import celery
+# from app import celery  # Redundant and potentially circular import
 
 if __name__ == "__main__":
     app.run(debug=True, host="localhost")

@@ -44,14 +44,14 @@ def login():
 
     admin = Admin.query.filter_by(email=email).first()
     if admin and admin.check_password(password):
-        login_user(admin)
         session['role'] = 'admin'
+        login_user(admin)
         return jsonify({"message": "Logged in as admin", "redirect": "/admin/dashboard"}), 200
 
     user = User.query.filter_by(email=email).first()
     if user and user.check_password(password):
-        login_user(user)
         session['role'] = 'user'
+        login_user(user)
         return jsonify({"message": "Logged in as user", "redirect": "/user/dashboard"}), 200
 
     return jsonify({"error": "Invalid credentials"}), 401
@@ -67,19 +67,20 @@ def logout():
 @auth_bp.route('/check')
 @login_required
 def check_auth():
-    if isinstance(current_user, User):
+    user = current_user._get_current_object()
+    if isinstance(user, User):
         return jsonify({
             "authenticated": True,
             "role": "user",
-            "fullname": current_user.fullname,
-            "email": current_user.email
+            "fullname": user.fullname,
+            "email": user.email
         })
-    elif isinstance(current_user, Admin):
+    elif isinstance(user, Admin):
         return jsonify({
             "authenticated": True,
             "role": "admin",
-            "fullname": current_user.fullname,
-            "email": current_user.email
+            "fullname": user.fullname,
+            "email": user.email
         })
     else:
         return jsonify({ "authenticated": False }), 401

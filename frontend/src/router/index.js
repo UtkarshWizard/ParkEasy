@@ -85,7 +85,7 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   try {
-    const res = await axios.get("http://localhost:5000/auth/check", {
+    const res = await axios.get("/auth/check", {
       withCredentials: true,
     });
 

@@ -6,7 +6,7 @@ import "bootstrap";
 import router from "./router";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-axios.defaults.baseURL = "http://localhost:5000";
+axios.defaults.baseURL = import.meta.env.VITE_API_URL;
 axios.defaults.withCredentials = true;
 
 window.deferredPrompt = null;

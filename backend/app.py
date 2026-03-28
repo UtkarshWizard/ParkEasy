@@ -18,7 +18,7 @@ app.config.from_object(Config)
 CORS(app, supports_credentials=True, origins=[
     "http://localhost:5173", "http://localhost:5174", "http://localhost:5175",
     "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://127.0.0.1:5175",
-    "http://0.0.0.0:5173", "http://0.0.0.0:5174"
+    "http://0.0.0.0:5173", "http://0.0.0.0:5174" , "https://park-easy-rho.vercel.app"
 ])
 
 db.init_app(app)
